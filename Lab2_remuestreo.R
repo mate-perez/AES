@@ -3,7 +3,7 @@ library(tidymodels)
 library(schrute) 
 library(vip)
 library(ISLR2)
-set.seed(1234)
+set.seed(4912)
 
 
 # Clase -------------------------------------------------------------------
@@ -150,29 +150,69 @@ lm_fit <-
                data = college_train) 
 
 broom::augment(lm_fit,
-               new_data = College)
-
-
-## 3)
-college_rec <- recipe(Apps ~ ., data = college_train) %>% 
+               new_data = college_train) %>% rmse(Apps, .pred)
+###
+college_rec <- recipe(Apps ~ ., data = College) %>% 
   step_dummy(Private) %>%  
   step_normalize(all_numeric(), -all_outcomes())
 
-tune_spec <- linear_reg(penalty = tune(), mixture = 0) |> 
-  set_engine("glmnet") 
+tune_spec <- linear_reg() |> 
+  set_engine("lm") 
 
 tune_wf <- workflow() |>
   add_recipe(college_rec) |>
   add_model(tune_spec)
 
-college_cv <- vfold_cv(college_train, v = 5) 
-lambda_grid <- grid_regular(penalty(c(-5, 3), trans = NULL), levels = 50) 
+fit1 <- tune_wf %>% parsnip::fit(data = college_train)
 
-ridge_grid <- tune_grid( 
-  tune_wf,
-  resamples = college_cv,
-  grid = lambda_grid
+broom::augment(fit1,
+               new_data = college_train) %>% rmse(Apps, .pred)
+
+## 3)
+ridge_mod <-
+  linear_reg(penalty = 0, mixture = 0) %>% 
+  set_engine("glmnet") 
+
+ridge_fit <-
+  ridge_mod %>% 
+  fit(Apps ~ ., 
+      data = college_train)
+
+bind_rows(
+  training = augment(ridge_fit, new_data = college_train) %>%
+    rmse(Apps, .pred),
+  testing = augment(ridge_fit, new_data = college_test) %>%
+    rmse(Apps, .pred)
 )
 
-ridge_grid |>
+## 4)
+ridge_fit %>%
+  autoplot()
+
+## 5)
+college_rec2 <- recipe(Apps ~ ., data = college_train) %>% 
+  step_dummy(all_nominal_predictors()) %>%  
+  step_normalize(all_predictors())
+
+## 6)
+ridge_mod <- linear_reg(penalty = tune(), mixture = 0) %>% 
+  set_engine("glmnet")
+
+ridge_wf <- workflow() |>
+  add_recipe(college_rec2) |>
+  add_model(ridge_mod)
+
+ridge_grid <- grid_regular(penalty(range = c(-5, 3)), levels = 50)
+
+college_cv <- vfold_cv(college_train, v = 5) 
+
+ridge_tune <- tune_grid( 
+  ridge_wf,
+  resamples = college_cv,
+  grid = ridge_grid
+)
+
+ridge_tune |>
   collect_metrics()
+
+ridge_tune %>% autoplot()
