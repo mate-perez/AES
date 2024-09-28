@@ -189,6 +189,8 @@ bind_rows(
 ridge_fit %>%
   autoplot()
 
+tidy(ridge_fit, penalty = 1000)
+
 ## 5)
 college_rec2 <- recipe(Apps ~ ., data = college_train) %>% 
   step_dummy(all_nominal_predictors()) %>%  
@@ -216,3 +218,78 @@ ridge_tune |>
   collect_metrics()
 
 ridge_tune %>% autoplot()
+
+final_ridge <- finalize_workflow(
+  ridge_wf,
+  select_best(ridge_tune, metric = "rmse")
+)
+
+ridge_last_fit <- last_fit(
+  object = final_ridge,
+  split = college_split
+)
+
+ridge_last_fit %>% 
+  collect_metrics()
+
+## 7)
+lasso_spec <- linear_reg(penalty = tune(), mixture = 1) %>% 
+  set_engine("glmnet")
+
+lasso_wf <- workflow() |>
+  add_recipe(college_rec2) |>
+  add_model(lasso_spec)
+
+lasso_grid <- grid_regular(penalty(range = c(-5, 3)), levels = 50)
+
+lasso_tune <- tune_grid( 
+  lasso_wf,
+  resamples = college_cv,
+  grid = lasso_grid
+)
+
+
+final_lasso <- finalize_workflow(
+  lasso_wf,
+  select_best(lasso_tune, metric = "rmse")
+)
+
+lasso_last_fit <- last_fit(
+  object = final_lasso,
+  split = college_split
+)
+
+lasso_last_fit %>% 
+  collect_metrics()
+
+## 8)
+knn_spec <- nearest_neighbor(neighbors = tune()) %>% 
+  set_engine("kknn") %>% 
+  set_mode("regression")
+
+knn_wf <- workflow() |>
+  add_recipe(college_rec2) |>
+  add_model(knn_spec)
+
+knn_grid <- grid_regular(neighbors(range = c(1, 50)), levels = 50)
+
+knn_tune <- tune_grid( 
+  knn_wf,
+  resamples = college_cv,
+  grid = knn_grid
+)
+
+knn_final <- finalize_workflow(
+  knn_workflow,
+  select_best(knn_tune, metric = "rmse")
+)
+
+knn_last_fit <- last_fit(
+  knn_final, split = college_split
+)
+
+knn_last_fit |> collect_metrics()
+
+
+
+
