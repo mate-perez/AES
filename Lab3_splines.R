@@ -191,7 +191,6 @@ Wage %>%
 
 ## Parte 5
 
-### 1)
 rec_gam <- recipes::recipe(wage ~ age + year + education, data = train_data) %>%
   step_ns(age, deg_free = 5) %>% 
   step_ns(year, deg_free = 4) 
@@ -206,7 +205,6 @@ tidy(gam_fit)
 augment(gam_fit,
         new_data = test_data)
 
-### 2)
 library(gratia)
 library(mgcv)
 
