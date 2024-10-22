@@ -142,10 +142,15 @@ pliegues <- list(
 
 # Función para calcular el MSE
 calcular_mse <- function(train, test) {
-  modelo <- lm(Y ~ X, data = train)
-  predicciones <- predict(modelo, newdata = test)
-  mse <- mean((test$Y - predicciones)^2)
-  return(mse)
+  mod <-
+    parsnip::linear_reg() %>%
+    parsnip::set_engine("lm")
+  
+  modelo <-
+    mod |> 
+    parsnip::fit(Y ~ X, data = train) 
+  
+  mse <- broom::augment(modelo, new_data = test) %>% mse(Y, .pred)
 }
 
 mse_list <- c()
@@ -168,6 +173,34 @@ for (i in 1:length(pliegues)) {
   mse <- calcular_mse(train_set, test_set)
   mse_list <- c(mse_list, mse)
 }
+# 
+# # Estimación del MSE por validación cruzada usando 5 pliegues (promedio de los 5 MSE's)
+# mse_cv <- mean(mse_list)
+# mse_cv
+# 
+# # Función para calcular el MSE
+# calcular_mse <- function(train, test) {
+#   modelo <- lm(Y ~ X, data = train)
+#   predicciones <- predict(modelo, newdata = test)
+#   mse <- mean((test$Y - predicciones)^2)
+#   return(mse)
+# }
+# 
+# mse_list <- c()
+# 
+# 
+# for (i in 1:length(pliegues)) {
+#   # Test
+#   test_ids <- pliegues[[i]]
+#   
+#   # Training y test
+#   test_set <- datos[datos$ID %in% test_ids, ]
+#   train_set <- datos[!datos$ID %in% test_ids, ]
+#   
+#   # MSE para el pliegue
+#   mse <- calcular_mse(train_set, test_set)
+#   mse_list <- c(mse_list, mse)
+# }
 
 # Estimación del MSE por validación cruzada usando 5 pliegues (promedio de los 5 MSE's)
 mse_cv <- mean(mse_list)
@@ -217,42 +250,20 @@ set.seed(1899)
 
 data <- data.frame(x, y)
 
-# Función para calcular el error LOOCV
-loocv_error <- function(formula, data) {
-  n <- nrow(data)
-  errors <- numeric(n)
+rmses <- c()
+for (i in 1:4) {
+  mod <- linear_reg() %>%
+         set_engine("lm")
   
-  for (i in 1:n) {
-    
-    train_data <- data[-i, ]
-    test_data <- data[i, , drop = FALSE]
-    
-    model <- lm(formula, data = train_data)
-    
-    prediction <- predict(model, newdata = test_data)
-    
-    errors[i] <- (test_data$y - prediction)^2
-  }
+  fit <- mod %>% 
+         parsnip::fit(y ~ poly(x, degree = i, raw = TRUE), data = data) 
   
-  rmse <- sqrt(mean(errors))
-  return(rmse)
+  rmses[i] <- augment(fit,
+                    new_data = data) %>% 
+              rmse(y, .pred)
 }
 
-# Modelos a evaluar
-modelo1 <- y ~ x
-modelo2 <- y ~ x + I(x^2)
-modelo3 <- y ~ x + I(x^2) + I(x^3)
-modelo4 <- y ~ x + I(x^2) + I(x^3) + I(x^4)
-
-# Errores para cada modelos
-errors <- c(
-  loocv_error(modelo1, data),
-  loocv_error(modelo2, data),
-  loocv_error(modelo3, data),
-  loocv_error(modelo4, data)
-)
-
-errors
+resultados <- data.frame(grado = 1:4, rmse = rmses)
 
 ```
 
@@ -263,44 +274,21 @@ errors
 ```{r}
 set.seed(2002)
 
-data <- data.frame(x, y)
-
-# Función para calcular el error LOOCV
-loocv_error <- function(formula, data) {
-  n <- nrow(data)
-  errors <- numeric(n)
+rmses <- c()
+for (i in 1:4) {
+  mod <- linear_reg() %>%
+         set_engine("lm")
   
-  for (i in 1:n) {
-    
-    train_data <- data[-i, ]
-    test_data <- data[i, , drop = FALSE]
-    
-    model <- lm(formula, data = train_data)
-    
-    prediction <- predict(model, newdata = test_data)
-    
-    errors[i] <- (test_data$y - prediction)^2
-  }
+  fit <- mod %>% 
+         parsnip::fit(y ~ poly(x, degree = i, raw = TRUE), data = data) 
   
-  rmse <- sqrt(mean(errors))
-  return(rmse)
+  rmses[i] <- augment(fit,
+                    new_data = data) %>% 
+              rmse(y, .pred)
 }
 
-# Modelos a evaluar
-modelo1 <- y ~ x
-modelo2 <- y ~ x + I(x^2)
-modelo3 <- y ~ x + I(x^2) + I(x^3)
-modelo4 <- y ~ x + I(x^2) + I(x^3) + I(x^4)
+resultados <- data.frame(grado = 1:4, rmse = rmses)
 
-# Errores para cada modelo
-errors <- c(
-  loocv_error(modelo1, data),
-  loocv_error(modelo2, data),
-  loocv_error(modelo3, data),
-  loocv_error(modelo4, data)
-)
-
-errors
 ```
 
 Son los mismos resultados, no hay aleatoriedad en esta parte.
@@ -314,6 +302,11 @@ El modelo 2, el cuadrático, lo que tiene todo el sentido debido a lo qu habíam
 ### f)
 
 ```{r, eval=FALSE}
+modelo1 <- y ~ x
+modelo2 <- y ~ x + I(x^2)
+modelo3 <- y ~ x + I(x^2) + I(x^3)
+modelo4 <- y ~ x + I(x^2) + I(x^3) + I(x^4)
+
 summary(glm(modelo1, data = data))
 summary(glm(modelo2, data = data))
 summary(glm(modelo3, data = data))
@@ -377,8 +370,6 @@ $$f_1''(\xi) = f_2''(\xi)$$
 
 ## Capítulo 7 Ejercicio 2
 
-Para $\lambda = \infty$ y m creciente da como resultado curvas más suaves y restringidas cada vez. Para $\lambda = 0$, la curva puede ser más flexible respetando la restricción de suavidad de la tercera derivada.
-
 
 ## Capítulo 7 Ejercicio 3
 
@@ -392,11 +383,11 @@ Y_hat <- function(X) {
          1 + b1(X) - 2 * b2(X))
 }
 
-X_values <- seq(-2, 2, by = 0.01)
-Y_values <- Y_hat(X_values)
+Xs <- seq(-2, 2, by = 0.01)
+Ys <- Y_hat(Xs)
 
-ggplot(mapping = aes(X_values, Y_values)) +
-  geom_line(col = "#0073e6", lwd = 1.5)
+ggplot(mapping = aes(Xs, Ys)) +
+  geom_line(col = "#0073e6")
 
 ```
 
@@ -417,11 +408,11 @@ Y_hat <- function(X) {
          )
 }
 
-X_values <- seq(-2, 6, by = 0.01)
-Y_values <- Y_hat(X_values)
+Xs <- seq(-2, 6, by = 0.01)
+Ys <- Y_hat(Xs)
 
-ggplot(mapping = aes(X_values, Y_values)) +
-  geom_line(col = "#0073e6", lwd = 1.5)
+ggplot(mapping = aes(Xs, Ys)) +
+  geom_line(col = "#0073e6")
 ```
 
 \newpage
@@ -477,6 +468,10 @@ for (degree in 1:10) {
 
   boston_data[[paste0("predicts_", degree)]] <- predict(lm_fit, new_data = boston_data)$`.pred`
   
+    # rss[i] <- augment(lm_fit,
+    #                 new_data = boston_data) %>% 
+    #           rss(nox, .pred)
+  
   rss <- sum((boston_data$nox - boston_data[[paste0("predicts_", degree)]])^2)
   
   results[[degree]] <- list(degree = degree, rss = rss)
@@ -492,6 +487,50 @@ ggplot(rss_df, aes(x = degree, y = rss)) +
 
 ### c)
 
+```{r REVISAR}
+# library(rsample)
+# library(yardstick)
+# 
+# # Configurar la validación cruzada
+# set.seed(123)
+# cv_splits <- vfold_cv(boston_data, v = 10)
+# 
+# mse_results <- data.frame(degree = integer(), mse = numeric())
+# 
+# for (degree in 1:10) {
+#   cv_errors <- c()
+#   
+#   for (split in cv_splits$splits) {
+#     train_data <- analysis(split)
+#     test_data <- assessment(split)
+#     
+#     # Ajustar el modelo
+#     lm_fit <- 
+#       parsnip::linear_reg() %>% 
+#       parsnip::set_engine("lm") %>% 
+#       parsnip::fit(nox ~ poly(dis, degree = degree, raw = TRUE), data = train_data)
+#     
+#     # Hacer predicciones
+#     predictions <- predict(lm_fit, new_data = test_data)$`.pred`
+#     
+#     # Calcular MSE
+#     mse <- mean((test_data$nox - predictions) ^ 2)
+#     cv_errors <- c(cv_errors, mse)
+#   }
+#   
+#   mse_results <- rbind(mse_results, data.frame(degree = degree, mse = mean(cv_errors)))
+# }
+# 
+# # Gráfico de MSE
+# ggplot(mse_results, aes(x = degree, y = mse)) +
+#   geom_line() +
+#   geom_point() +
+#   labs(title = "MSE para diferentes grados de polinomio",
+#        x = "Grado del polinomio",
+#        y = "MSE")
+
+
+```
 
 
 ### d)
@@ -502,8 +541,9 @@ spline_fit <-
   parsnip::set_engine("lm") %>% 
   parsnip::fit(nox ~ bs(dis, df = 4), data = boston_data)
 
-spline_summary <- spline_fit %>% extract_fit_engine() %>% summary()
-spline_summary
+spline_fit %>%
+  extract_fit_engine() %>%
+  summary()
 
 boston_data$predicts_sp <- predict(spline_fit, new_data = boston_data)$`.pred`
 
@@ -525,6 +565,10 @@ for (df in 5:20) {
   
   predictions <- predict(spline_fit, new_data = boston_data)$`.pred`
   
+      # rss[i] <- augment(spline_fit,
+    #                 new_data = boston_data) %>% 
+    #           rss(nox, .pred)
+  
   rss <- sum((boston_data$nox - predictions)^2)
   
   rss_results <- rbind(rss_results, data.frame(df = df, rss = rss))
@@ -535,15 +579,52 @@ for (df in 5:20) {
 ggplot(boston_data, aes(x = dis, y = nox)) +
   geom_point(color = "#0073e6", alpha = 0.5) +
   geom_line(aes(y = predicts__5), color = "#FF2119", size = 1) +
-  geom_line(aes(y = predicts__10), color = "#FF6F19", size = 1) +
-  geom_line(aes(y = predicts__14), color = "#FFDB19", size = 1) +
-  geom_line(aes(y = predicts__18), color = "#1AABFF", size = 1) 
+  geom_line(aes(y = predicts__10), color = "#FF8331", size = 1) +
+  geom_line(aes(y = predicts__14), color = "#1AA526", size = 1) +
+  geom_line(aes(y = predicts__18), color = "#1BF895", size = 1) 
 
 rss_results
 
 ```
 
 ### f)
+
+```{r REVISAR}
+# mse_spline_results <- data.frame(df = integer(), mse = numeric())
+# 
+# for (df in 5:20) {
+#   cv_errors <- c()
+#   
+#   for (split in cv_splits$splits) {
+#     train_data <- analysis(split)
+#     test_data <- assessment(split)
+#     
+#     # Ajustar el modelo spline
+#     spline_fit <- 
+#       parsnip::linear_reg() %>% 
+#       parsnip::set_engine("lm") %>% 
+#       parsnip::fit(nox ~ bs(dis, df = df), data = train_data)
+#     
+#     # Hacer predicciones
+#     predictions <- predict(spline_fit, new_data = test_data)$`.pred`
+#     
+#     # Calcular MSE
+#     mse <- mean((test_data$nox - predictions) ^ 2)
+#     cv_errors <- c(cv_errors, mse)
+#   }
+#   
+#   mse_spline_results <- rbind(mse_spline_results, data.frame(df = df, mse = mean(cv_errors)))
+# }
+# 
+# # Gráfico de MSE para splines
+# ggplot(mse_spline_results, aes(x = df, y = mse)) +
+#   geom_line() +
+#   geom_point() +
+#   labs(title = "MSE para diferentes grados de libertad en splines",
+#        x = "Grados de libertad",
+#        y = "MSE")
+
+```
 
 
 \newpage
@@ -568,14 +649,14 @@ mod <-
   parsnip::set_engine("lm")
 
 completo <-
-  mod |> # modelo de parnisp
+  mod |> 
   parsnip::fit(Outstate ~ ., data = college_train) 
 
 completo$fit %>%
   summary()
 
 fit <-
-  mod |> # modelo de parnisp
+  mod |> 
   parsnip::fit(Outstate ~ Private + Apps + Accept + Top10perc + Room.Board +
                        Terminal + perc.alumni + Expend + Grad.Rate, data = college_train) 
 
@@ -585,34 +666,50 @@ fit$fit %>%
 ```
 
 ```{r}
-rmse_linear <- broom::augment(fit,
-                new_data = college_train) %>% rmse(Outstate, .pred)
+rmse_linear <- augment(fit,
+                       new_data = college_train) %>%
+               rmse(Outstate, .pred)
 
 ```
 
 ### b)
 
 ```{r}
+library(mgcv)
 
 rec_gam <- recipes::recipe(Outstate ~ Private + Apps + Accept + Top10perc + Room.Board +
-                 Terminal + perc.alumni + Expend + Grad.Rate, data = college_train) 
+                                      Terminal + perc.alumni + Expend + Grad.Rate,
+                           data = college_train) 
+
+mgcv_spec <- parsnip::gen_additive_mod() %>%
+  parsnip::set_engine("mgcv") %>% 
+  parsnip::set_mode("regression")
 
 gam_wf <- workflows::workflow() %>%
-  workflows::add_model(mod) %>%
-  workflows::add_recipe(rec_gam)
+  workflows::add_recipe(rec_gam) %>% 
+  workflows::add_model(mgcv_spec)
 
-gam_fit <- parsnip:: fit(gam_wf, data = college_train)
+gam_fit <- parsnip::fit(gam_wf, data = college_data)
+gam <- extract_fit_engine(gam_fit)
 
-rmse_gam <- broom::augment(gam_fit,
-                new_data = college_train) %>% rmse(Outstate, .pred)
+gratia::draw(gam, residuals = T)
 
 ```
 
 ### c)
 
 ```{r}
-rmse_linear
-rmse_gam
+rmse_gam_test <- augment(gam_fit,
+                    new_data = college_test) %>% 
+                 rmse(gam_predictions_test, Outstate, .pred)
+
+rmse_gam_test
+
 ```
 
+### d)
+
+```{r}
+summary(gam_fit)
+```
 
