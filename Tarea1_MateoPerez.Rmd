@@ -1,0 +1,618 @@
+---
+title: "Tarea 1"
+author: "Mateo Perez"
+date: "Octubre 2024"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Ejercicio 1
+
+Demostrar:
+
+$$E\left[\frac{1}{n}\sum_{i=1}^{n}(y_i - \hat{\beta}^T x_i)^2\right] \leq E\left[\frac{1}{m}\sum_{i=1}^{m}(y'_i - \hat{\beta}^T x'_i)^2\right]$$
+
+### Primer paso:
+
+$$E\left[\frac{1}{m}\sum_{i=1}^{m}(y'_i - \hat{\beta}^T x'_i)^2\right] = \frac{1}{m}\sum_{i=1}^{m} E\left[(y'_i - \hat{\beta}^T x'_i)^2\right]$$
+Como:
+
+$$E\left[(y'_i - \hat{\beta}^T x'_i)^2\right] = E_t\left[E_v\left[(y'_i - \hat{\beta}^T x'_i)^2 | t \right]\right]$$
+Entonces:
+
+$$E\left[\frac{1}{m}\sum_{i=1}^{m}(y'_i - \hat{\beta}^T x'_i)^2\right] = \frac{1}{m}\sum_{i=1}^{m} E_t\left[E_v\left[(y'_i - \hat{\beta}^T x'_i)^2 | t \right]\right]$$
+Ahora tomo que:
+
+$$E_v\left[(y'_i - \hat{\beta}^T x'_i)^2 | t \right] = E_v\left[(y'_1 - \hat{\beta}^T x'_1)^2 | t \right]$$
+Por lo tanto:
+
+$$E\left[\frac{1}{m}\sum_{i=1}^{m}(y'_i - \hat{\beta}^T x'_i)^2\right] = \frac{1}{m}\sum_{i=1}^{m} E_t\left[E_v\left[(y'_1 - \hat{\beta}^T x'_1)^2 | t \right]\right]$$
+Entonces:
+
+$$E\left[\frac{1}{m}\sum_{i=1}^{m}(y'_i - \hat{\beta}^T x'_i)^2\right] = E_t\left[E_v\left[(y'_1 - \hat{\beta}^T x'_1)^2 | t \right]\right] = E\left[(y'_1 - \hat{\beta}^T x'_1)^2 \right]$$
+
+### Segundo paso:
+
+Se consideran las siguientes VA:
+
+$$A = \frac{1}{n} \sum_{i=1}^{n}(y_i - \hat{\beta}^T x_i)^2$$
+$$B = \frac{1}{n} \sum_{i=1}^{n}(y'_i - \tilde{\beta}^T x'_i)^2$$
+Dado que $y_i$ y $y'_i$, y  $x_i$ y $x'_i$ son iid, entonces se puede afirmar que A y B tienen la misma distribución y por lo tanto $E[A] = E[B]$.
+
+### Tercera parte:
+
+Como:
+
+$$y'_i - \tilde{\beta}^T x'_i = (y'_i - \hat{\beta}^T x'_i) + (\hat{\beta}^T x'_i - \tilde{\beta}^T x'_i)$$
+
+y $E[(a+b)^2] \leq E[a^2] + E[b^2]$, entonces:
+
+$$(y'_i - \tilde{\beta}^T x'_i)^2 \leq (y'_i - \hat{\beta}^T x'_i)^2 + (\hat{\beta}^T x'_i - \tilde{\beta}^T x'_i)^2$$
+Y por lo tanto:
+
+$$\frac{1}{n} \sum_{i=1}^{n} (y'_i - \tilde{\beta}^T x'_i)^2 \leq \frac{1}{n} \sum_{i=1}^{n} (y'_i - \hat{\beta}^T x'_i)^2 + \frac{1}{n} \sum_{i=1}^{n} (\hat{\beta}^T x'_i - \tilde{\beta}^T x'_i)^2$$
+Como el último término es cercano a 0, entonces:
+
+$$B \leq \frac{1}{n} \sum_{i=1}^{n} (y'_i - \hat{\beta}^T x'_i)^2$$
+
+### Cuarta parte:
+
+Siguiendo el paso anterior:
+
+$$E[B] \leq E \left[\frac{1}{n} \sum_{i=1}^{n} (y'_i - \hat{\beta}^T x'_i)^2 \right]$$
+Por lo que queda demostrado que:
+
+$$E \left[\frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{\beta}^T x_i)^2 \right] \leq E \left[\frac{1}{n} \sum_{i=1}^{n} (y'_i - \hat{\beta}^T x'_i)^2 \right]$$
+
+\newpage
+
+# Ejercicio 2
+
+### a) El tamaño muestral n es extremadamente grande y el número de pedictores p es pequeño.
+
+Se espera que un método flexible funcione mejor ya que se puede ajustar mejor a la cantidad de datos. 
+
+### b) El númeto de predictores p es extremadamente grande y el número de observaciones n es pequeño.
+
+Se espera que un método inflexible funcione mejor ya que los flexibles seguramente generen sobreajuste. 
+
+### c) La relación entre los predictores y la respuesta es marcadamente no lineal.
+
+Se espera que un método flexible funcione mejor ya que este podría ajustar relaciones no lineales sin problemas. 
+
+### d) La varianza del término de error $sigma^2 = V(\epsilon)$ es extremadamente alta.
+
+Se espera que un método inflexible funcione mejor ya que los otos tenderán a sobreajustar. 
+
+
+# Ejercicio 3
+
+Modelos más flexibls tienen las ventajas de que pueden adaptarse mejor al tener mucha cantidad de variables y tienen una capacidad bastante alta para capturar relaciones complejas, por ejemplo no lineales, pero tienen las desventajas de que existe un mayor riesgo de producir sobreajustes y generalmente se precisa de una mayor cantidad de datos para su buen funcionamiento.  
+
+Por otro lado los modelos menos flexibles suelen usarse cuando existe una baja cantidad de datos, o cuando el interés principal está en poder interpretar los resultados, su desventaja principal es la baja capacidad para capturar relaciones complejas en los datos, además de que generalmente producen predictores con mayor sesgo a los flexibles.
+
+
+# Ejercicio 4
+
+En clasificación se busca los "k" vecinos más cercanos al dato y se lo clasifica según la mayoría de etiquetas de esos vecinos, es decir si tiene 5 vecinos y 3 tienen una misma etiqueta y 2 otra, ese dato se clsifica como los 3 mencionados.  
+En regresión lo que sucede es que se toma el promedio de los "k" vecinos más cercanos para hacer una predicción sobre una clasificación.  
+La principal diferencia entonces es que la clasificación se usa para valores discretos, mientras que la regresión se usa para valores continuos.
+
+\newpage
+
+# Ejercicio 5
+
+## A)
+
+Es probable que la SCR de la regresión cúbica sea menor o igual que la SCR de la regresión lineal ya que la regresión cúbica al ser más flexible, tiene la capacidad de ajustarse mejor a las variaciones en los datos de entrenamiento, aunque esas variaciones no representen la verdadera relación lineal.  
+
+## B)
+
+Se espera que la SCR sea menor para la regresión lineal que para la regresión cúbica ya que la regresión lineal va a captar mejor la verdadera relación entre X e Y, debido a que efectivamente esta relación es lineal.
+
+## C)
+
+Se espera que la SCR de entrenamiento para la regresión cúbica sea menor que la SCR de entrenamiento para la regresión lineal, debido a la mayor flexibilidad de la regresión cúbica para ajustarse a un modelo no lineal.
+
+## D)
+
+No existe suficiente información para asegurar que la SCR en el conjunto de test sea menor o mayor para la regresión cúbica que para la regresión lineal, debido a que aunque la regresión cúbica sea más flexible para captar esta relación no lineal, exite otro problema que viene por el lado del sobreajuste en el que muy seguramente caiga la regresión cúbica.
+
+\newpage
+
+# Ejercicio 6
+
+```{r}
+datos <- data.frame(
+  ID = 1:20,
+  Y = c(8, 9, 14, 10, 10, 15, 11, 6, 7, 8, 13, 11, 11, 10, 8, 15, 11, 4, 12, 8),
+  X = c(6, 8, 12, 9, 9, 13, 11, 6, 5, 9, 13, 10, 11, 10, 8, 15, 11, 3, 11, 7)
+)
+
+pliegues <- list(
+  pliegue_1 = c(4, 3, 19, 16),
+  pliegue_2 = c(2, 15, 7, 18),
+  pliegue_3 = c(9, 14, 12, 20),
+  pliegue_4 = c(17, 6, 8, 10),
+  pliegue_5 = c(1, 5, 13, 11)
+)
+
+# Función para calcular el MSE
+calcular_mse <- function(train, test) {
+  modelo <- lm(Y ~ X, data = train)
+  predicciones <- predict(modelo, newdata = test)
+  mse <- mean((test$Y - predicciones)^2)
+  return(mse)
+}
+
+mse_list <- c()
+
+# Paso a paso del procedimiento,
+# en cada paso se deja afuera un pliegue distinto,
+# se ajusta el modelos para los otros 4 pliegues
+# y se testea con el que se deja afuera, calculando el MSE,
+# en total cada pliegue se usa 4 veces para training y 1 vez para test
+
+for (i in 1:length(pliegues)) {
+  # Test
+  test_ids <- pliegues[[i]]
+  
+  # Training y test
+  test_set <- datos[datos$ID %in% test_ids, ]
+  train_set <- datos[!datos$ID %in% test_ids, ]
+  
+  # MSE para el pliegue
+  mse <- calcular_mse(train_set, test_set)
+  mse_list <- c(mse_list, mse)
+}
+
+# Estimación del MSE por validación cruzada usando 5 pliegues (promedio de los 5 MSE's)
+mse_cv <- mean(mse_list)
+mse_cv
+
+```
+
+\newpage
+
+# Ejercicios ISLR
+
+## Capítulo 5 Ejercicio 8
+
+### a)
+
+```{r}
+set.seed(1)
+x <- rnorm(100)
+y <- x - 2 * x^2 + rnorm(100)
+```
+
+En este caso n = 100 y p = 1, y el modelo es:
+
+$$Y = \beta_0 + \beta_1 . X + \beta_2 . X^2 + \epsilon$$
+donde $\beta_0 = 0, \beta_1 = 1, \beta_2 = -2$ y $\epsilon$ es el error.
+
+
+### b)
+
+```{r, out.width="75%", fig.align='center'}
+library(ggplot2)
+ggplot(mapping = aes(x, y)) +
+  geom_point(color = "#0073e6", size = 3, alpha = 0.7) + 
+  labs(title = "Scatterplot de X contra Y", 
+       x = "X", 
+       y = "Y")
+```
+
+Se observa una clara relación entre las variables, no lineal, se nota muy marcada una subida de los valores de Y en función de un aumento en X hasta un punto máximo donde la situación cambia y una vez pasado ese punto a medida que aumenta la X baja la Y. Destacar cerca del centro de los valores de X hay muchos puntos y no se aprecian tan claras estas relaciones.
+
+\newpage
+
+### c)
+
+```{r}
+set.seed(1899)
+
+data <- data.frame(x, y)
+
+# Función para calcular el error LOOCV
+loocv_error <- function(formula, data) {
+  n <- nrow(data)
+  errors <- numeric(n)
+  
+  for (i in 1:n) {
+    
+    train_data <- data[-i, ]
+    test_data <- data[i, , drop = FALSE]
+    
+    model <- lm(formula, data = train_data)
+    
+    prediction <- predict(model, newdata = test_data)
+    
+    errors[i] <- (test_data$y - prediction)^2
+  }
+  
+  rmse <- sqrt(mean(errors))
+  return(rmse)
+}
+
+# Modelos a evaluar
+modelo1 <- y ~ x
+modelo2 <- y ~ x + I(x^2)
+modelo3 <- y ~ x + I(x^2) + I(x^3)
+modelo4 <- y ~ x + I(x^2) + I(x^3) + I(x^4)
+
+# Errores para cada modelos
+errors <- c(
+  loocv_error(modelo1, data),
+  loocv_error(modelo2, data),
+  loocv_error(modelo3, data),
+  loocv_error(modelo4, data)
+)
+
+errors
+
+```
+
+\newpage
+
+### d)
+
+```{r}
+set.seed(2002)
+
+data <- data.frame(x, y)
+
+# Función para calcular el error LOOCV
+loocv_error <- function(formula, data) {
+  n <- nrow(data)
+  errors <- numeric(n)
+  
+  for (i in 1:n) {
+    
+    train_data <- data[-i, ]
+    test_data <- data[i, , drop = FALSE]
+    
+    model <- lm(formula, data = train_data)
+    
+    prediction <- predict(model, newdata = test_data)
+    
+    errors[i] <- (test_data$y - prediction)^2
+  }
+  
+  rmse <- sqrt(mean(errors))
+  return(rmse)
+}
+
+# Modelos a evaluar
+modelo1 <- y ~ x
+modelo2 <- y ~ x + I(x^2)
+modelo3 <- y ~ x + I(x^2) + I(x^3)
+modelo4 <- y ~ x + I(x^2) + I(x^3) + I(x^4)
+
+# Errores para cada modelo
+errors <- c(
+  loocv_error(modelo1, data),
+  loocv_error(modelo2, data),
+  loocv_error(modelo3, data),
+  loocv_error(modelo4, data)
+)
+
+errors
+```
+
+Son los mismos resultados, no hay aleatoriedad en esta parte.
+
+\newpage
+
+### e)
+
+El modelo 2, el cuadrático, lo que tiene todo el sentido debido a lo qu habíamos observado en el scatterplot, donde se veía una especie de parábola.
+
+### f)
+
+```{r, eval=FALSE}
+summary(glm(modelo1, data = data))
+summary(glm(modelo2, data = data))
+summary(glm(modelo3, data = data))
+summary(glm(modelo4, data = data))
+
+```
+
+Viendo los resumenos se concuerda con la información vista en cv, los coeficientes extras asociados a los modelos 3 y 4 no son significativos, mientras que el modelo 2 ajusta mejor que el 1 siendo significativo en todos los parámetros.
+
+\newpage
+
+## Capítulo 7 Ejercicio 1
+
+### a)
+
+$$f(x) = \beta_0 + \beta_1 x + \beta_2 x^2 + \beta_3 x^3 + \beta_4 (x - \xi)^3_+$$
+
+Como $x \leq \xi$, entonces:
+
+$$f_1(x) = \beta_0 + \beta_1 x + \beta_2 x^2 + \beta_3 x^3$$
+donde $a_1 = \beta_0, b_1 = \beta_1, c_1 = \beta_2, d_1 = \beta_3$
+
+### b)
+
+Como $x > \xi$, entonces:
+
+$$f(x) = \beta_0 + \beta_1 x + \beta_2 x^2 + \beta_3 x^3 + \beta_4 (x - \xi)^3_+$$
+Ahora reescribimos $(x - \xi)^3$ como:
+
+$$(x - \xi)^3 = x^3 - 3\xi x^2 + 3\xi^2 x - \xi^3$$
+Entonces:
+
+$$f(x) = \beta_0 + \beta_1 x + \beta_2 x^2 + \beta_3 x^3 + \beta_4 (x^3 - 3\xi x^2 + 3\xi^2 x - \xi^3)$$
+Por lo tanto:
+
+$$f(x) = (\beta_0 - \beta_4 \xi^3) + (\beta_1 + 3\beta_4 \xi^2)x + (\beta_2 + 3\beta_4 \xi)x^2 + (\beta_3 + \beta_4)x^3$$
+
+Donde $a_2 = (\beta_0 - \beta_4 \xi^3), b_2 = (\beta_1 + 3\beta_4 \xi^2), c_2 = (\beta_2 + 3\beta_4 \xi), d_2 = (\beta_3 + \beta_4)$
+
+### c)
+
+$$f_1(\xi) = \beta_0 + \beta_1 \xi + \beta_2 \xi^2 + \beta_3 \xi^3$$
+$$f_2(\xi) = (\beta_0 - \beta_4 \xi^3) + (\beta_1 + 3\beta_4 \xi^2)\xi + (\beta_2 + 3\beta_4 \xi)\xi^2 + (\beta_3 + \beta_4)\xi^3$$
+$$f_2(\xi) = \beta_0 - \beta_4 \xi^3 + \beta_1 \xi + 3\beta_4 \xi^3 + \beta_2 \xi^2 + 3\beta_4 \xi^3 + \beta_3 \xi^3$$
+$$f_2(\xi) = \beta_0 + \beta_1 \xi + \beta_2 \xi^2 + \beta_3 \xi^3 + 2\beta_4 \xi^3$$
+$$f_1(\xi) = f_2(\xi)$$
+
+### d)
+
+$$f_1'(\xi) = \beta_1 + 2\beta_2 \xi + 3\beta_3 \xi^2$$
+$$f_2'(\xi) = (\beta_1 + 3\beta_4 \xi^2) + 2(\beta_2 + 3\beta_4 \xi)\xi + 3(\beta_3 + \beta_4)\xi^2 = \beta_1 + 2\beta_2 \xi + 3\beta_3 \xi^2 + 12\beta_4 \xi^2$$
+$$f_1'(\xi) = f_2'(\xi)$$
+
+### e)
+
+$$f_1''(\xi) = 2\beta_2 + 6\beta_3 \xi$$
+$$f_2''(\xi) = 2(\beta_2 + 3\beta_4 \xi) + 6(\beta_3 + \beta_4)\xi = 2\beta_2 + 6\beta_3 \xi + 6\beta_4 \xi$$
+$$f_1''(\xi) = f_2''(\xi)$$
+
+\newpage
+
+## Capítulo 7 Ejercicio 2
+
+Para $\lambda = \infty$ y m creciente da como resultado curvas más suaves y restringidas cada vez. Para $\lambda = 0$, la curva puede ser más flexible respetando la restricción de suavidad de la tercera derivada.
+
+
+## Capítulo 7 Ejercicio 3
+
+```{r, out.width="75%", fig.align='center'}
+b1 <- function(X) { X }
+b2 <- function(X) { (X - 1)^2 * (X >= 1) }
+
+Y_hat <- function(X) {
+  ifelse(X < 1, 
+         1 + b1(X), 
+         1 + b1(X) - 2 * b2(X))
+}
+
+X_values <- seq(-2, 2, by = 0.01)
+Y_values <- Y_hat(X_values)
+
+ggplot(mapping = aes(X_values, Y_values)) +
+  geom_line(col = "#0073e6", lwd = 1.5)
+
+```
+
+\newpage
+
+## Capítulo 7 Ejercicio 4
+
+```{r,out.width="75%", fig.align='center'}
+b1 <- function(X) { (0 <= X & X <= 2) - (X - 1) * (1 <= X & X <= 2) }
+b2 <- function(X) { (X - 3) * (3 <= X & X <= 4) + (4 < X & X <= 5) }
+
+Y_hat <- function(X) {
+  ifelse(X < 0, 1,
+         ifelse(X < 1, 2,
+                ifelse(X <= 2,3 - X,
+                       ifelse(X < 3, 1,
+                              ifelse(X < 4, 3 * (X - 3) + 1 - 8,4))))
+         )
+}
+
+X_values <- seq(-2, 6, by = 0.01)
+Y_values <- Y_hat(X_values)
+
+ggplot(mapping = aes(X_values, Y_values)) +
+  geom_line(col = "#0073e6", lwd = 1.5)
+```
+
+\newpage
+
+## Capítulo 7 Ejercicio 9
+
+```{r, message=FALSE, warning=FALSE}
+library(tidymodels)
+library(MASS)
+library(dplyr)
+library(parsnip)
+library(splines)
+library(mgcv)
+library(ISLR)
+
+boston_data <- Boston
+```
+
+### a)
+
+```{r,out.width="75%", fig.align='center'}
+lm_fit <-
+  parsnip::linear_reg() %>% 
+  parsnip::set_engine("lm") %>% 
+  parsnip::fit(nox ~ poly(dis, degree = 3, raw = TRUE), 
+               data = boston_data) 
+
+lm_fit %>% 
+  extract_fit_engine() %>%
+  summary()
+
+predictions <- predict(lm_fit, new_data = boston_data)
+boston_data$predicts <- predictions$.pred 
+
+ggplot(boston_data, aes(x = dis, y = nox)) +
+  geom_point(color = "#0073e6", alpha = 0.5) +  
+  geom_line(aes(y = predicts), color = "#FF2855")
+
+```
+
+
+### b)
+
+```{r,out.width="75%", fig.align='center'}
+results <- list()
+
+for (degree in 1:10) {
+  lm_fit <- 
+    parsnip::linear_reg() %>% 
+    parsnip::set_engine("lm") %>% 
+    parsnip::fit(nox ~ poly(dis, degree = degree, raw = TRUE), 
+                 data = boston_data)
+
+  boston_data[[paste0("predicts_", degree)]] <- predict(lm_fit, new_data = boston_data)$`.pred`
+  
+  rss <- sum((boston_data$nox - boston_data[[paste0("predicts_", degree)]])^2)
+  
+  results[[degree]] <- list(degree = degree, rss = rss)
+}
+
+rss_df <- bind_rows(lapply(results, function(x) data.frame(degree = x$degree, rss = x$rss)))
+
+ggplot(rss_df, aes(x = degree, y = rss)) +
+  geom_line() +
+  geom_point() 
+
+```
+
+### c)
+
+
+
+### d)
+
+```{r,out.width="75%", fig.align='center'}
+spline_fit <- 
+  parsnip::linear_reg() %>% 
+  parsnip::set_engine("lm") %>% 
+  parsnip::fit(nox ~ bs(dis, df = 4), data = boston_data)
+
+spline_summary <- spline_fit %>% extract_fit_engine() %>% summary()
+spline_summary
+
+boston_data$predicts_sp <- predict(spline_fit, new_data = boston_data)$`.pred`
+
+ggplot(boston_data, aes(x = dis, y = nox)) +
+  geom_point(color = "#0073e6", alpha = 0.5) +  
+  geom_line(aes(y = predicts_sp), color = "#FF2119") 
+```
+
+### e)
+
+```{r,out.width="75%", fig.align='center', warning=FALSE}
+rss_results <- data.frame(df = integer(), rss = numeric())
+
+for (df in 5:20) {
+  spline_fit <- 
+    parsnip::linear_reg() %>% 
+    parsnip::set_engine("lm") %>% 
+    parsnip::fit(nox ~ bs(dis, df = df), data = boston_data)
+  
+  predictions <- predict(spline_fit, new_data = boston_data)$`.pred`
+  
+  rss <- sum((boston_data$nox - predictions)^2)
+  
+  rss_results <- rbind(rss_results, data.frame(df = df, rss = rss))
+  
+  boston_data[[paste0("predicts__", df)]] <- predictions
+}
+
+ggplot(boston_data, aes(x = dis, y = nox)) +
+  geom_point(color = "#0073e6", alpha = 0.5) +
+  geom_line(aes(y = predicts__5), color = "#FF2119", size = 1) +
+  geom_line(aes(y = predicts__10), color = "#FF6F19", size = 1) +
+  geom_line(aes(y = predicts__14), color = "#FFDB19", size = 1) +
+  geom_line(aes(y = predicts__18), color = "#1AABFF", size = 1) 
+
+rss_results
+
+```
+
+### f)
+
+
+\newpage
+
+## Capítulo 7 Ejercicio 10
+
+### a)
+
+```{r, message=FALSE}
+college_data <- College
+
+set.seed(1899) 
+
+college_split <- initial_split(college_data, 
+                              prop = 4/5) 
+
+college_train <- training(college_split)
+college_test <- testing(college_split)
+
+mod <-
+  parsnip::linear_reg() %>%
+  parsnip::set_engine("lm")
+
+completo <-
+  mod |> # modelo de parnisp
+  parsnip::fit(Outstate ~ ., data = college_train) 
+
+completo$fit %>%
+  summary()
+
+fit <-
+  mod |> # modelo de parnisp
+  parsnip::fit(Outstate ~ Private + Apps + Accept + Top10perc + Room.Board +
+                       Terminal + perc.alumni + Expend + Grad.Rate, data = college_train) 
+
+fit$fit %>%
+  summary()
+
+```
+
+```{r}
+rmse_linear <- broom::augment(fit,
+                new_data = college_train) %>% rmse(Outstate, .pred)
+
+```
+
+### b)
+
+```{r}
+
+rec_gam <- recipes::recipe(Outstate ~ Private + Apps + Accept + Top10perc + Room.Board +
+                 Terminal + perc.alumni + Expend + Grad.Rate, data = college_train) 
+
+gam_wf <- workflows::workflow() %>%
+  workflows::add_model(mod) %>%
+  workflows::add_recipe(rec_gam)
+
+gam_fit <- parsnip:: fit(gam_wf, data = college_train)
+
+rmse_gam <- broom::augment(gam_fit,
+                new_data = college_train) %>% rmse(Outstate, .pred)
+
+```
+
+### c)
+
+```{r}
+rmse_linear
+rmse_gam
+```
+
+
