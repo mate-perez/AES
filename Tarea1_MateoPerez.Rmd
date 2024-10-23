@@ -6,7 +6,7 @@ output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE)
 ```
 
 # Ejercicio 1
@@ -42,7 +42,7 @@ $$A = \frac{1}{n} \sum_{i=1}^{n}(y_i - \hat{\beta}^T x_i)^2$$
 $$B = \frac{1}{n} \sum_{i=1}^{n}(y'_i - \tilde{\beta}^T x'_i)^2$$
 Dado que $y_i$ y $y'_i$, y  $x_i$ y $x'_i$ son iid, entonces se puede afirmar que A y B tienen la misma distribución y por lo tanto $E[A] = E[B]$.
 
-### Tercera parte:
+### Tercer paso:
 
 Como:
 
@@ -58,7 +58,7 @@ Como el último término es cercano a 0, entonces:
 
 $$B \leq \frac{1}{n} \sum_{i=1}^{n} (y'_i - \hat{\beta}^T x'_i)^2$$
 
-### Cuarta parte:
+### Cuarto paso:
 
 Siguiendo el paso anterior:
 
@@ -85,39 +85,40 @@ Se espera que un método flexible funcione mejor ya que este podría ajustar rel
 
 ### d) La varianza del término de error $sigma^2 = V(\epsilon)$ es extremadamente alta.
 
-Se espera que un método inflexible funcione mejor ya que los otos tenderán a sobreajustar. 
+Se espera que un método inflexible funcione mejor ya que los flexibles tenderán a sobreajustar.  
 
 
 # Ejercicio 3
 
-Modelos más flexibls tienen las ventajas de que pueden adaptarse mejor al tener mucha cantidad de variables y tienen una capacidad bastante alta para capturar relaciones complejas, por ejemplo no lineales, pero tienen las desventajas de que existe un mayor riesgo de producir sobreajustes y generalmente se precisa de una mayor cantidad de datos para su buen funcionamiento.  
+Modelos más flexibles tienen las ventajas de que pueden adaptarse mejor al tener mucha cantidad de variables y tienen una capacidad bastante alta para capturar relaciones complejas, por ejemplo no lineales, pero tienen las desventajas de que existe un mayor riesgo de producir sobreajustes y generalmente se precisa de una mayor cantidad de datos para su buen funcionamiento.  
 
 Por otro lado los modelos menos flexibles suelen usarse cuando existe una baja cantidad de datos, o cuando el interés principal está en poder interpretar los resultados, su desventaja principal es la baja capacidad para capturar relaciones complejas en los datos, además de que generalmente producen predictores con mayor sesgo a los flexibles.
 
+\newpage
 
 # Ejercicio 4
 
 En clasificación se busca los "k" vecinos más cercanos al dato y se lo clasifica según la mayoría de etiquetas de esos vecinos, es decir si tiene 5 vecinos y 3 tienen una misma etiqueta y 2 otra, ese dato se clsifica como los 3 mencionados.  
-En regresión lo que sucede es que se toma el promedio de los "k" vecinos más cercanos para hacer una predicción sobre una clasificación.  
-La principal diferencia entonces es que la clasificación se usa para valores discretos, mientras que la regresión se usa para valores continuos.
 
-\newpage
+En regresión lo que sucede es que se toma el promedio de los "k" vecinos más cercanos para hacer una predicción sobre este.  
+
+La principal diferencia entonces es que en clasificación se usan valores discretos, mientras que en regresión se usan valores continuos.  
 
 # Ejercicio 5
 
-## A)
+### A)
 
 Es probable que la SCR de la regresión cúbica sea menor o igual que la SCR de la regresión lineal ya que la regresión cúbica al ser más flexible, tiene la capacidad de ajustarse mejor a las variaciones en los datos de entrenamiento, aunque esas variaciones no representen la verdadera relación lineal.  
 
-## B)
+### B)
 
 Se espera que la SCR sea menor para la regresión lineal que para la regresión cúbica ya que la regresión lineal va a captar mejor la verdadera relación entre X e Y, debido a que efectivamente esta relación es lineal.
 
-## C)
+### C)
 
 Se espera que la SCR de entrenamiento para la regresión cúbica sea menor que la SCR de entrenamiento para la regresión lineal, debido a la mayor flexibilidad de la regresión cúbica para ajustarse a un modelo no lineal.
 
-## D)
+### D)
 
 No existe suficiente información para asegurar que la SCR en el conjunto de test sea menor o mayor para la regresión cúbica que para la regresión lineal, debido a que aunque la regresión cúbica sea más flexible para captar esta relación no lineal, exite otro problema que viene por el lado del sobreajuste en el que muy seguramente caiga la regresión cúbica.
 
@@ -136,10 +137,13 @@ library(mgcv)
 library(ISLR)
 library(rsample)
 library(yardstick)
+library(gridExtra)
+library(broom)
+# library(gratia)
 ```
 
 
-```{r, eval=FALSE}
+```{r}
 datos <- data.frame(
   ID = 1:20,
   Y = c(8, 9, 14, 10, 10, 15, 11, 6, 7, 8, 13, 11, 11, 10, 8, 15, 11, 4, 12, 8),
@@ -154,28 +158,13 @@ pliegues <- list(
   pliegue_5 = c(1, 5, 13, 11)
 )
 
-# Función para calcular el MSE
-calcular_mse <- function(train, test) {
-  mod <-
-    parsnip::linear_reg() %>%
-    parsnip::set_engine("lm")
-  
-  modelo <-
-    mod |> 
-    parsnip::fit(Y ~ X, data = train) 
-  
-  mse <- augment(modelo, new_data = test) %>% 
-    rmse(Y, .pred)^2
-
-}
-
-mse_list <- c()
-
 # Paso a paso del procedimiento,
 # en cada paso se deja afuera un pliegue distinto,
 # se ajusta el modelos para los otros 4 pliegues
 # y se testea con el que se deja afuera, calculando el MSE,
 # en total cada pliegue se usa 4 veces para training y 1 vez para test
+
+mse_list <- c()
 
 for (i in 1:length(pliegues)) {
   # Test
@@ -185,8 +174,21 @@ for (i in 1:length(pliegues)) {
   test_set <- datos[datos$ID %in% test_ids, ]
   train_set <- datos[!datos$ID %in% test_ids, ]
   
+  # Modelo lineal
+  mod <-
+    parsnip::linear_reg() %>%
+    parsnip::set_engine("lm")
+  
+  # Ajuste
+  fit <-
+    mod |> 
+    parsnip::fit(Y ~ X, data = train_set) 
+  
   # MSE para el pliegue
-  mse <- calcular_mse(train_set, test_set)
+  rmse <- broom::augment(fit, new_data = test_set) %>% 
+                rmse(Y, .pred)
+  
+  mse <- (rmse$.estimate)^2
   mse_list <- c(mse_list, mse)
 }
 
@@ -221,7 +223,7 @@ donde $\beta_0 = 0, \beta_1 = 1, \beta_2 = -2$ y $\epsilon$ es el error.
 ```{r, out.width="75%", fig.align='center'}
 
 ggplot(mapping = aes(x, y)) +
-  geom_point(color = "#0073e6", size = 3, alpha = 0.7) + 
+  geom_point(color = "#111899", size = 3, alpha = 0.7) + 
   labs(title = "Scatterplot de X contra Y", 
        x = "X", 
        y = "Y")
@@ -239,19 +241,27 @@ set.seed(1899)
 data <- data.frame(x, y)
 
 rmses <- c()
+
 for (i in 1:4) {
+  
+  # Modelo lineal
   mod <- linear_reg() %>%
          set_engine("lm")
   
+  # Ajuste
   fit <- mod %>% 
          parsnip::fit(y ~ poly(x, degree = i, raw = TRUE), data = data) 
   
+  # RMSE´s
   rmses[[i]] <- augment(fit,
                     new_data = data) %>% 
-              rmse(y, .pred)
+                rmse(y, .pred)
 }
 
-bind_rows(as.data.frame(rmses[[1]]), as.data.frame(rmses[[2]]), as.data.frame(rmses[[3]]), as.data.frame(rmses[[4]]))
+bind_rows(as.data.frame(rmses[[1]]),
+          as.data.frame(rmses[[2]]),
+          as.data.frame(rmses[[3]]),
+          as.data.frame(rmses[[4]]))
 
 ```
 
@@ -263,29 +273,32 @@ bind_rows(as.data.frame(rmses[[1]]), as.data.frame(rmses[[2]]), as.data.frame(rm
 set.seed(2002)
 
 rmses <- c()
+
 for (i in 1:4) {
+  
+  # Modelo lineal
   mod <- linear_reg() %>%
          set_engine("lm")
-  
+  # Ajuste
   fit <- mod %>% 
          parsnip::fit(y ~ poly(x, degree = i, raw = TRUE), data = data) 
-  
+  # RMSE´s
   rmses[[i]] <- augment(fit,
                     new_data = data) %>% 
-              rmse(y, .pred)
+                rmse(y, .pred)
+  
 }
 
-bind_rows(as.data.frame(rmses[[1]]), as.data.frame(rmses[[2]]), as.data.frame(rmses[[3]]), as.data.frame(rmses[[4]]))
+bind_rows(as.data.frame(rmses[[1]]), as.data.frame(rmses[[2]]),
+          as.data.frame(rmses[[3]]), as.data.frame(rmses[[4]]))
 
 ```
 
 Son los mismos resultados, no hay aleatoriedad en esta parte.
 
-\newpage
-
 ### e)
 
-El modelo 2, el cuadrático, lo que tiene todo el sentido debido a lo qu habíamos observado en el scatterplot, donde se veía una especie de parábola.
+El modelo 2, el cuadrático, lo que tiene todo el sentido debido a lo que habíamos observado en el scatterplot, donde se veía una especie de parábola.
 
 ### f)
 
@@ -299,7 +312,7 @@ summary(glm(modelo4, data = data))
 
 ```
 
-Viendo los resumenos se concuerda con la información vista en cv, los coeficientes extras asociados a los modelos 3 y 4 no son significativos, mientras que el modelo 2 ajusta mejor que el 1 siendo significativo en todos los parámetros.
+Viendo el resumen se concuerda con la información vista en cv, los coeficientes extras asociados a los modelos 3 y 4 no son significativos, mientras que el modelo 2 ajusta mejor que el 1 siendo significativo en todos los parámetros.
 
 \newpage
 
@@ -372,7 +385,7 @@ Xs <- seq(-2, 2, by = 0.01)
 Ys <- Y_hat(Xs)
 
 ggplot(mapping = aes(Xs, Ys)) +
-  geom_line(col = "#0073e6")
+  geom_line(col = "#111899")
 
 ```
 
@@ -397,7 +410,7 @@ Xs <- seq(-2, 6, by = 0.01)
 Ys <- Y_hat(Xs)
 
 ggplot(mapping = aes(Xs, Ys)) +
-  geom_line(col = "#0073e6")
+  geom_line(col = "#111899")
 ```
 
 \newpage
@@ -406,7 +419,7 @@ ggplot(mapping = aes(Xs, Ys)) +
 
 ### a)
 
-```{r,out.width="75%", fig.align='center'}
+```{r,out.width="60%", fig.align='center'}
 boston_data <- Boston
 
 lm_fit <-
@@ -415,52 +428,138 @@ lm_fit <-
   parsnip::fit(nox ~ poly(dis, degree = 3, raw = TRUE), 
                data = boston_data) 
 
-lm_fit %>% 
-  extract_fit_engine() %>%
-  summary()
+tidy(lm_fit)
 
-predictions <- predict(lm_fit, new_data = boston_data)
-boston_data$predicts <- predictions$.pred 
+regression_lines <- bind_cols(
+    augment(lm_fit, new_data = boston_data),
+    predict(lm_fit, new_data = boston_data, type = "conf_int")
+)
 
-ggplot(boston_data, aes(x = dis, y = nox)) +
-  geom_point(color = "#0073e6", alpha = 0.5) +  
-  geom_line(aes(y = predicts), color = "#FF2855")
+boston_data %>%
+     ggplot(aes(dis, nox)) +
+     geom_point(alpha = 0.2) +
+     geom_line(aes(y = .pred), color = "darkgreen",
+               data = regression_lines) +
+     geom_line(aes(y = .pred_lower), data = regression_lines,
+               linetype = "dashed", color = "blue") +
+     geom_line(aes(y = .pred_upper), data = regression_lines,
+               linetype = "dashed", color = "blue")
 
 ```
 
 
 ### b)
 
-```{r,out.width="75%", fig.align='center'}
-results <- list()
+```{r}
+results <- c()
+regression_lines <- list()
 
 for (degree in 1:10) {
+
+  # Ajuste
   lm_fit <- 
     parsnip::linear_reg() %>% 
     parsnip::set_engine("lm") %>% 
     parsnip::fit(nox ~ poly(dis, degree = degree, raw = TRUE), 
                  data = boston_data)
 
-  boston_data[[paste0("predicts_", degree)]] <- predict(lm_fit, new_data = boston_data)$`.pred`
+  # MSE´s
+  rmse <- broom::augment(lm_fit, new_data = boston_data) %>% 
+                 rmse(nox, .pred)
   
-  rss <- sum((boston_data$nox - boston_data[[paste0("predicts_", degree)]])^2)
+  mse <- (rmse$.estimate)^2
+  results <- c(results, mse)
   
-  results[[degree]] <- list(degree = degree, rss = rss)
+  regression_lines[[degree]] <- augment(lm_fit,
+                                        new_data = boston_data)
+  
 }
 
-rss_df <- bind_rows(lapply(results, function(x) data.frame(degree = x$degree, rss = x$rss)))
+results_df <- data.frame(Grados = 1:10, MSE = results)
+results_df
+```
 
-ggplot(rss_df, aes(x = degree, y = rss)) +
-  geom_line() +
-  geom_point() 
+\newpage
 
+```{r,out.width="75%", fig.align='center'}
+
+g1 <- boston_data %>%
+     ggplot(aes(dis, nox)) +
+     geom_point(alpha = 0.2) +
+     geom_line(aes(y = .pred), color = "darkgreen",
+               data = regression_lines[[1]]) + 
+     geom_line(aes(y = .pred), color = "black",
+               data = regression_lines[[2]]) +
+     geom_line(aes(y = .pred), color = "blue",
+               data = regression_lines[[3]]) +
+     geom_line(aes(y = .pred), color = "red",
+               data = regression_lines[[4]]) +
+     geom_line(aes(y = .pred), color = "orange",
+               data = regression_lines[[5]]) 
+
+g2 <- boston_data %>%
+     ggplot(aes(dis, nox)) +
+     geom_point(alpha = 0.2) +
+     geom_line(aes(y = .pred), color = "darkgreen", linetype = 2,
+               data = regression_lines[[6]]) + 
+     geom_line(aes(y = .pred), color = "black", linetype = 2,
+               data = regression_lines[[7]]) +
+     geom_line(aes(y = .pred), color = "blue", linetype = 2,
+               data = regression_lines[[8]]) +
+     geom_line(aes(y = .pred), color = "red", linetype = 2,
+               data = regression_lines[[9]]) +
+     geom_line(aes(y = .pred), color = "orange", linetype = 2,
+               data = regression_lines[[10]])
+
+grid.arrange(g1, g2, ncol = 2)
 ```
 
 ### c)
 
+```{r}
+set.seed(1899)
+
+grados <- 1:10
+results <- tibble(degree = grados, rmse = numeric(10))
+folds <- vfold_cv(boston_data, v = 5)
+
+for (i in grados) {
+  rmses <- c()
+  
+  for (f in folds$splits) {
+
+    # Divido en train y test
+    train_data <- training(f)
+    test_data <- testing(f)
+    
+    # Modelo lineal
+    lm_mod <-
+      parsnip::linear_reg() %>% 
+      parsnip::set_engine("lm") 
+    
+    # Ajuste
+    lm_fit <-
+      lm_mod %>% 
+      parsnip::fit(nox ~ poly(dis, i), data = train_data) 
+    
+    # RMSE´s
+    rmse_value <- broom::augment(lm_fit,
+                                 new_data = train_data) %>%
+                         rmse(nox, .pred)
+    
+    rmses <- c(rmses, rmse_value$.estimate)
+  }
+  
+  results$rmse[i] <- mean(rmses)
+}
+
+results
+
+```
+
 ### d)
 
-```{r,out.width="75%", fig.align='center'}
+```{r,out.width="50%", fig.align='center'}
 spline_fit <- 
   parsnip::linear_reg() %>% 
   parsnip::set_engine("lm") %>% 
@@ -473,14 +572,14 @@ spline_fit %>%
 boston_data$predicts_sp <- predict(spline_fit, new_data = boston_data)$`.pred`
 
 ggplot(boston_data, aes(x = dis, y = nox)) +
-  geom_point(color = "#0073e6", alpha = 0.5) +  
+  geom_point(color = "#111899") +  
   geom_line(aes(y = predicts_sp), color = "#FF2119") 
 ```
 
 ### e)
 
-```{r,out.width="75%", fig.align='center', warning=FALSE}
-rss_results <- data.frame(df = integer(), rss = numeric())
+```{r,out.width="60%", fig.align='center', warning=FALSE}
+SCR_results <- data.frame(df = integer(), SCR = numeric())
 
 for (df in 5:20) {
   spline_fit <- 
@@ -490,25 +589,67 @@ for (df in 5:20) {
   
   predictions <- predict(spline_fit, new_data = boston_data)$`.pred`
 
-  rss <- sum((boston_data$nox - predictions)^2)
+  model_summary <- glance(spline_fit)
+  SCR <- sum(model_summary$sigma^2 * (model_summary$nobs - 1)) 
   
-  rss_results <- rbind(rss_results, data.frame(df = df, rss = rss))
+  SCR_results <- bind_rows(SCR_results, data.frame(df = df, SCR = SCR))
   
   boston_data[[paste0("predicts__", df)]] <- predictions
 }
 
 ggplot(boston_data, aes(x = dis, y = nox)) +
-  geom_point(color = "#0073e6", alpha = 0.5) +
-  geom_line(aes(y = predicts__5), color = "#FF2119", size = 1) +
-  geom_line(aes(y = predicts__10), color = "#FF8331", size = 1) +
-  geom_line(aes(y = predicts__14), color = "#1AA526", size = 1) +
-  geom_line(aes(y = predicts__18), color = "#1BF895", size = 1) 
+  geom_point(color = "blue", alpha = 0.1) +
+  geom_line(aes(y = predicts__5), color = "red", size = 1) +
+  geom_line(aes(y = predicts__10), color = "black", size = 1) +
+  geom_line(aes(y = predicts__14), color = "darkgreen", size = 1) +
+  geom_line(aes(y = predicts__18), color = "purple", size = 1) 
+```
 
-rss_results
+\newpage
 
+```{r}
+SCR_results
 ```
 
 ### f)
+
+```{r}
+set.seed(1899)
+
+df <- 5:20
+results <- tibble(DF = df, RMSE = numeric(16))
+
+folds <- vfold_cv(boston_data, v = 5)
+
+for (i in seq_along(df)) {
+  rmses <- c()
+  
+  for (f in folds$splits) {
+    
+    # Divido en train y test
+    train_data <- training(f)
+    test_data <- testing(f)
+    
+    # Modelo 
+    spline_fit <- 
+      parsnip::linear_reg() %>% 
+      parsnip::set_engine("lm") %>% 
+      parsnip::fit(nox ~ bs(dis, df = df[i]), data = train_data)
+    
+    # RMSE´s
+    rmse_value <- broom::augment(spline_fit,
+                                 new_data = train_data) %>%
+                         rmse(nox, .pred)
+    
+    rmses <- c(rmses, rmse_value$.estimate)
+  }
+  
+  results$RMSE[i] <- mean(rmses)
+}
+
+results
+```
+
 
 \newpage
 
@@ -522,7 +663,7 @@ college_data <- College
 set.seed(1899) 
 
 college_split <- initial_split(college_data, 
-                              prop = 4/5) 
+                              prop = 3/4) 
 
 college_train <- training(college_split)
 college_test <- testing(college_split)
@@ -531,12 +672,20 @@ mod <-
   parsnip::linear_reg() %>%
   parsnip::set_engine("lm")
 
-completo <-
+fit_nulo <-
   mod |> 
-  parsnip::fit(Outstate ~ ., data = college_train) 
+  parsnip::fit(Outstate ~ 1, data = college_train)
 
-completo$fit %>%
-  summary()
+######## NO FUNCIONA ########
+# modelo_fwd <- step(fit_nulo$fit, 
+#                    scope = list(lower = fit_nulo$fit, 
+#                                 upper = ~ ., 
+#                                 data = college_train), 
+#                    direction = "forward")
+# 
+# modelo_fwd$fit %>% 
+#   summary()
+#############################
 
 fit <-
   mod |> 
@@ -572,7 +721,7 @@ gam_wf <- workflows::workflow() %>%
   workflows::add_model(mgcv_spec, formula = Outstate ~ Private + Apps + Accept + Top10perc + Room.Board +
                                       Terminal + perc.alumni + Expend + Grad.Rate)
 
-gam_fit <- parsnip::fit(gam_wf, data = college_data)
+gam_fit <- parsnip::fit(gam_wf, data = college_train)
 gam <- extract_fit_engine(gam_fit)
 
 # gratia::draw(gam, residuals = T)
@@ -593,8 +742,7 @@ rmse_gam_test
 ### d)
 
 ```{r}
-gam_fit %>% 
-  extract_fit_engine() %>%
+gam %>%
   summary()
 ```
 
