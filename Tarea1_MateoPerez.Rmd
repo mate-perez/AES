@@ -718,8 +718,9 @@ mgcv_spec <- parsnip::gen_additive_mod() %>%
 
 gam_wf <- workflows::workflow() %>%
   workflows::add_recipe(rec_gam) %>% 
-  workflows::add_model(mgcv_spec, formula = Outstate ~ Private + Apps + Accept + Top10perc + Room.Board +
-                                      Terminal + perc.alumni + Expend + Grad.Rate)
+  workflows::add_model(mgcv_spec, formula = Outstate ~ Private + Apps + Accept +
+                                                       Top10perc + Room.Board + Terminal +
+                                                       perc.alumni + Expend + Grad.Rate)
 
 gam_fit <- parsnip::fit(gam_wf, data = college_train)
 gam <- extract_fit_engine(gam_fit)
