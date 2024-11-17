@@ -202,7 +202,7 @@ tune_fit
 
 ## 2) y 3)
 set.seed(321)
-trees_fold <- vfold_cv(Carseats_train) #defecto 10-folds
+trees_fold <- vfold_cv(Carseats_train) 
 
 tune_res <- tune_grid(tune_wf,
                       resamples = trees_fold,
@@ -214,26 +214,44 @@ autoplot(tune_res)
 
 ## 5)
 rf_grid <- grid_regular(
-                        levels = 5)
+  mtry(range = c(2, 7)),
+  min_n(range = c(2, 10)),
+  levels = 5
+)
 
-regular_res <- tune_grid(tune_wf,
-                         resamples = trees_fold,
-                         grid = rf_grid,
-                         metrics = metric_set(roc_auc))   
-  
-autoplot(regular_res)  
+set.seed(456)
+
+regular_res <- tune_grid(
+  tune_wf,
+  resamples = trees_folds,
+  grid = rf_grid
+)
+regular_res
+
+regular_res %>%
+  collect_metrics() %>%
+  filter(.metric == "roc_auc") %>%
+  mutate(min_n = factor(min_n)) %>%
+  ggplot(aes(mtry, mean, color = min_n)) +
+  geom_line(alpha = 0.5, size = 1.5) +
+  geom_point() +
+  labs(y = "AUC") 
 
 ## 6)
-best_auc <- select_best()
+best_auc <- select_best(regular_res, metric="roc_auc")
 
+final_rf <- finalize_model(
+  tune_spec,
+  best_auc
+)
+final_rf
 
+final_wf <- workflow() %>%
+  add_recipe(rf_ranger) %>%
+  add_model(final_rf)
 
-final_wf <- workflow() %>% 
-  add_model(final_rf) %>% 
-  add_formula(High ~ .)
-
-final_res <- final_wf %>% 
+final_res <- final_wf %>%
   last_fit(Carseats_split)
 
-final_res %>% 
+final_res %>%
   collect_metrics()
